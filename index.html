@@ -146,9 +146,21 @@
         .file-actions button.view { background-color: #4285F4; color: white; }
         .file-actions button:disabled { background-color: #E0E0E0; color: #757575; cursor: not-allowed; }
         .back-button { margin-bottom: 1rem; padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; background-color: #f0f0f0; cursor: pointer; width: fit-content; }
-
         .modal { position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); display: none; justify-content: center; align-items: center; }
         .modal-content { background-color: #fefefe; padding: 20px; border-radius: 15px; width: 80%; max-width: 500px; }
+
+        /* Chatbot Styles */
+        #chatbot-toggle { position: absolute; bottom: 80px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background-color: var(--primary-accent); color: white; display: flex; justify-content: center; align-items: center; font-size: 2rem; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 1001; }
+        #chatbot-window { position: absolute; bottom: 150px; right: 20px; width: calc(100% - 40px); max-width: 350px; height: 450px; background-color: white; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); display: none; flex-direction: column; z-index: 1000; }
+        #chatbot-window.active { display: flex; }
+        .chat-header { background-color: var(--primary-accent); color: white; padding: 10px; border-top-left-radius: 15px; border-top-right-radius: 15px; text-align: center; font-weight: 500; }
+        .chat-body { flex: 1; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .chat-message { padding: 8px 12px; border-radius: 18px; max-width: 80%; line-height: 1.4; }
+        .chat-message.user { background-color: #e9e9eb; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .chat-message.bot { background-color: #e9d5ff; align-self: flex-start; border-bottom-left-radius: 4px; }
+        .chat-input { display: flex; padding: 10px; border-top: 1px solid #eee; }
+        .chat-input input { flex: 1; border: 1px solid #ddd; border-radius: 20px; padding: 8px 15px; font-size: 1rem; outline: none; }
+        .chat-input button { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--primary-accent); margin-left: 8px; }
     </style>
 </head>
 <body>
@@ -180,6 +192,8 @@
                 </div>
             </div></main>
             <div class="mobile-nav"><div class="nav-item active" onclick="showPage('homePage')"><span class="icon">🏠</span>Home</div><div class="nav-item" onclick="showPage('myTestsPage')"><span class="icon">📝</span>My Tests</div><div class="nav-item" onclick="showFiles('My Courses')"><span class="icon">▶️</span>My Courses</div><div class="nav-item" onclick="navigateToProfile()"><span class="icon">👤</span>Profile</div></div>
+            <div id="chatbot-toggle" onclick="toggleChatbot()">💬</div>
+            <div id="chatbot-window"><div class="chat-header">Chatbot Assistant</div><div class="chat-body" id="chatBody"><div class="chat-message bot">How can I help you today?</div></div><div class="chat-input"><input type="text" id="chatInput" placeholder="Type a message..."><button onclick="sendChatMessage()">➤</button></div></div>
         </div>
 
         <!-- My Tests Page -->
@@ -201,37 +215,7 @@
 
         <!-- Utility Pages -->
         <div id="fileListPage" class="page"><div class="page-content"><h2 id="fileListTitle">Files</h2><div id="fileListBackButton" class="back-button">← Back</div><div id="fileListContainer"></div></div></div>
-        <div id="adminPanel" class="page"><div class="page-content"><h2>Admin Panel</h2>
-            <!-- ***** FIX: Changed div to form ***** -->
-            <form class="form-container" id="uploadForm">
-                <input type="text" id="fileTitle" placeholder="File Title" required>
-                <select id="fileCategory" onchange="handleCategoryChange()"><option value="">Select Category</option><option value="Live Class">📹 Live Class</option><option value="Daily Newspaper Highlights">📰 Newspaper Highlights</option><option value="UPSC Answer Writing">✍️ UPSC Answers</option><option value="My Courses">▶️ My Courses</option><option value="Quiz">📝 Quiz</option><option value="Others">📁 Others</option><option value="Custom">Custom Category</option></select>
-                <input type="text" id="customCategory" placeholder="Enter Custom Category" style="display:none;">
-                <textarea id="quizData" placeholder='For Quiz, paste JSON here' style="display:none; height: 100px;"></textarea>
-                <div id="uploadMethodContainer">
-                    <div style="margin-bottom: 0.5rem;"><label>Upload Method:</label>
-                        <div>
-                            <input type="radio" id="uploadMethodFile" name="uploadMethod" value="file" checked onchange="toggleUploadInput(true)"><label for="uploadMethodFile">File</label> 
-                            <input type="radio" id="uploadMethodLink" name="uploadMethod" value="link" onchange="toggleUploadInput(false)"><label for="uploadMethodLink">Link</label>
-                        </div>
-                    </div>
-                    <input type="file" id="fileUpload">
-                    <small>Note: Browser storage may limit size.</small>
-                </div>
-                <input type="text" id="fileLink" placeholder="File URL or Video/Class Link" style="display: none;">
-                <div class="permissions" style="display: flex;">
-                    <label><input type="checkbox" id="allowView" checked> View</label>
-                    <label><input type="checkbox" id="allowDownload"> Download</label>
-                </div>
-                <button type="submit">Upload Material</button>
-            </form>
-            <hr style="margin: 2rem 0;">
-            <div class="form-container">
-                <h3>Uploaded Files</h3>
-                <div id="uploadedFilesList"></div>
-                <button onclick="handleLogout()" class="danger" style="width:100%; margin-top:1rem;">Logout</button>
-            </div>
-        </div></div>
+        <div id="adminPanel" class="page"><div class="page-content"><h2>Admin Panel</h2><form class="form-container" id="uploadForm"><input type="text" id="fileTitle" placeholder="File Title" required><select id="fileCategory" onchange="handleCategoryChange()"><option value="">Select Category</option><option value="Live Class">📹 Live Class</option><option value="Daily Newspaper Highlights">📰 Newspaper Highlights</option><option value="UPSC Answer Writing">✍️ UPSC Answers</option><option value="My Courses">▶️ My Courses</option><option value="Quiz">📝 Quiz</option><option value="Others">📁 Others</option><option value="Custom">Custom Category</option></select><input type="text" id="customCategory" placeholder="Enter Custom Category" style="display:none;"><textarea id="quizData" placeholder='For Quiz, paste JSON here' style="display:none; height: 100px;"></textarea><div id="uploadMethodContainer"><div style="margin-bottom: 0.5rem;"><label>Upload Method:</label><div><input type="radio" id="uploadMethodFile" name="uploadMethod" value="file" checked onchange="toggleUploadInput(true)"><label for="uploadMethodFile">File</label> <input type="radio" id="uploadMethodLink" name="uploadMethod" value="link" onchange="toggleUploadInput(false)"><label for="uploadMethodLink">Link</label></div></div><input type="file" id="fileUpload"><small>Note: Browser storage may limit size.</small></div><input type="text" id="fileLink" placeholder="File URL or Video/Class Link" style="display: none;"><div class="permissions" style="display: flex;"><label><input type="checkbox" id="allowView" checked> View</label><label><input type="checkbox" id="allowDownload"> Download</label></div><button type="submit">Upload Material</button></form><hr style="margin: 2rem 0;"><div class="form-container"><h3>Uploaded Files</h3><div id="uploadedFilesList"></div><button onclick="handleLogout()" class="danger" style="width:100%; margin-top:1rem;">Logout</button></div></div></div>
         <div id="termsModal" class="modal"><div class="modal-content"><span style="float:right; cursor:pointer;" onclick="closeTerms()">&times;</span><h2>Terms</h2><p>For educational use only.</p></div></div>
     </div>
     
@@ -240,22 +224,18 @@
     <script>
         // --- Firebase Config ---
         const firebaseConfig = {
-  apiKey: "AIzaSyAYqamKln5RzxJZyoBBCA9Ld4QyFdwVuXo",
-  authDomain: "hindi-association-app-c996b.firebaseapp.com",
-  databaseURL: "https://hindi-association-app-c996b-default-rtdb.firebaseio.com",
-  projectId: "hindi-association-app-c996b",
-  storageBucket: "hindi-association-app-c996b.firebasestorage.app",
-  messagingSenderId: "887134213948",
-  appId: "1:887134213948:web:c2cccfb3a8e510883d3039",
-  measurementId: "G-MP2GHYQN69"
-};
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            appId: "YOUR_APP_ID"
+        };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
 
         // --- Global State ---
         let currentUser = null;
 
-        // --- App Initialization (CRITICAL: Login Check) ---
+        // --- App Initialization (Login Check) ---
         document.addEventListener('DOMContentLoaded', () => {
             const loggedInStudent = sessionStorage.getItem('currentUser');
             const loggedInAdmin = sessionStorage.getItem('adminLoggedIn');
@@ -271,19 +251,8 @@
         });
 
         // --- Navigation ---
-        function showPage(pageId) {
-            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-            document.getElementById(pageId).classList.add('active');
-            updateNav(pageId);
-            if (pageId === 'adminPanel') renderUploadedFiles();
-        }
-        function updateNav(pageId) {
-            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            document.querySelectorAll(`.nav-item[onclick*="'${pageId}'"]`).forEach(nav => nav.classList.add('active'));
-            if(pageId === 'fileListPage' && document.getElementById('fileListTitle').innerText === 'My Courses') {
-                 document.querySelectorAll(`.nav-item[onclick*="showFiles('My Courses')"]`).forEach(nav => nav.classList.add('active'));
-            }
-        }
+        function showPage(pageId) { document.querySelectorAll('.page').forEach(page => page.classList.remove('active')); document.getElementById(pageId).classList.add('active'); updateNav(pageId); if (pageId === 'adminPanel') renderUploadedFiles(); }
+        function updateNav(pageId) { document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active')); document.querySelectorAll(`.nav-item[onclick*="'${pageId}'"]`).forEach(nav => nav.classList.add('active')); if(pageId === 'fileListPage' && document.getElementById('fileListTitle').innerText === 'My Courses') { document.querySelectorAll(`.nav-item[onclick*="showFiles('My Courses')"]`).forEach(nav => nav.classList.add('active')); } }
         const navigateToProfile = () => { showProfileView(); showPage('profilePage'); };
         const showStudentLogin = () => showPage('loginPage');
         const showSignup = () => showPage('signupPage');
@@ -292,156 +261,100 @@
         // --- Student Auth & Data ---
         const getStudentAccounts = () => JSON.parse(localStorage.getItem('studentAccounts')) || [];
         const saveStudentAccounts = (accounts) => localStorage.setItem('studentAccounts', JSON.stringify(accounts));
-        function handleStudentSignup() {
-            const username = document.getElementById('signupUsername').value.trim();
-            const password = document.getElementById('signupPassword').value;
-            if (!username || !password) return alert('Please fill all fields.');
-            if (getStudentAccounts().find(acc => acc.username === username)) return alert('Username already exists.');
-            saveStudentAccounts([...getStudentAccounts(), { username, password, downloads: [] }]);
-            alert('Signup successful!');
-            showStudentLogin();
-        }
-        function handleStudentLogin() {
-            const username = document.getElementById('studentUsername').value.trim();
-            const password = document.getElementById('studentPassword').value;
-            const user = getStudentAccounts().find(acc => acc.username === username && acc.password === password);
-            if (user) {
-                currentUser = user;
-                sessionStorage.setItem('currentUser', JSON.stringify(user));
-                showPage('homePage');
-            } else { alert('Invalid credentials.'); }
-        }
+        function handleStudentSignup() { const username = document.getElementById('signupUsername').value.trim(); const password = document.getElementById('signupPassword').value; if (!username || !password) return alert('Please fill all fields.'); if (getStudentAccounts().find(acc => acc.username === username)) return alert('Username already exists.'); saveStudentAccounts([...getStudentAccounts(), { username, password, downloads: [] }]); alert('Signup successful!'); showStudentLogin(); }
+        function handleStudentLogin() { const username = document.getElementById('studentUsername').value.trim(); const password = document.getElementById('studentPassword').value; const user = getStudentAccounts().find(acc => acc.username === username && acc.password === password); if (user) { currentUser = user; sessionStorage.setItem('currentUser', JSON.stringify(user)); showPage('homePage'); } else { alert('Invalid credentials.'); } }
         
         // --- Admin Auth ---
-        function handleAdminLogin() {
-            const email = document.getElementById('adminEmail').value;
-            const password = document.getElementById('adminPassword').value;
-            if (!email || !password) return alert('Please enter email and password.');
-            auth.signInWithEmailAndPassword(email, password)
-                .then(() => {
-                    sessionStorage.setItem('adminLoggedIn', 'true');
-                    showPage('adminPanel');
-                })
-                .catch(error => alert('Admin Login Failed: ' + error.message));
-        }
+        function handleAdminLogin() { const email = document.getElementById('adminEmail').value; const password = document.getElementById('adminPassword').value; if (!email || !password) return alert('Please enter email and password.'); auth.signInWithEmailAndPassword(email, password).then(() => { sessionStorage.setItem('adminLoggedIn', 'true'); showPage('adminPanel'); }).catch(error => alert('Admin Login Failed: ' + error.message)); }
         
         // --- Logout & Account Management ---
-        function handleLogout() {
-            sessionStorage.clear();
-            currentUser = null;
-            if (auth.currentUser) auth.signOut();
-            showPage('loginPage');
-        }
+        function handleLogout() { sessionStorage.clear(); currentUser = null; if (auth.currentUser) auth.signOut(); showPage('loginPage'); }
         const handleDeleteAccount = () => { if (confirm('Are you sure?')) { saveStudentAccounts(getStudentAccounts().filter(acc => acc.username !== currentUser.username)); handleLogout(); } };
         
         // --- Profile Section ---
         const showProfileEdit = () => { document.getElementById('profileView').style.display = 'none'; document.getElementById('profileEditView').style.display = 'block'; document.getElementById('editUsername').value = currentUser.username; document.getElementById('editPassword').value = ''; };
         const showProfileView = () => { document.getElementById('profileView').style.display = 'block'; document.getElementById('profileEditView').style.display = 'none'; };
-        function handleProfileUpdate(event) {
-            event.preventDefault();
-            const newUsername = document.getElementById('editUsername').value.trim();
-            const newPassword = document.getElementById('editPassword').value;
-            if (!newUsername) return alert('Username cannot be empty.');
-            let accounts = getStudentAccounts();
-            const userIndex = accounts.findIndex(acc => acc.username === currentUser.username);
-            if (accounts.some((acc, i) => acc.username === newUsername && i !== userIndex)) { return alert('This username is already taken.'); }
-            accounts[userIndex].username = newUsername;
-            if (newPassword) accounts[userIndex].password = newPassword;
-            saveStudentAccounts(accounts);
-            currentUser = accounts[userIndex];
-            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-            alert('Profile updated successfully!');
-            showProfileView();
-        }
+        function handleProfileUpdate(event) { event.preventDefault(); const newUsername = document.getElementById('editUsername').value.trim(); const newPassword = document.getElementById('editPassword').value; if (!newUsername) return alert('Username cannot be empty.'); let accounts = getStudentAccounts(); const userIndex = accounts.findIndex(acc => acc.username === currentUser.username); if (accounts.some((acc, i) => acc.username === newUsername && i !== userIndex)) { return alert('This username is already taken.'); } accounts[userIndex].username = newUsername; if (newPassword) accounts[userIndex].password = newPassword; saveStudentAccounts(accounts); currentUser = accounts[userIndex]; sessionStorage.setItem('currentUser', JSON.stringify(currentUser)); alert('Profile updated successfully!'); showProfileView(); }
         const showTerms = () => document.getElementById('termsModal').style.display = 'flex';
         const closeTerms = () => document.getElementById('termsModal').style.display = 'none';
+        
+        // --- NEW: Share and My Downloads ---
+        async function shareApplication() {
+            const shareData = { title: 'Study Material App', text: 'Check out this awesome Study Material app!', url: window.location.href };
+            if (navigator.share) {
+                try { await navigator.share(shareData); } catch (err) { console.error("Share failed:", err); }
+            } else {
+                prompt("To share, please copy this link:", window.location.href);
+            }
+        }
+
+        function showMyDownloads() {
+            const studentData = getStudentAccounts().find(acc => acc.username === currentUser.username);
+            const downloads = studentData ? studentData.downloads || [] : [];
+            document.getElementById('fileListTitle').innerText = "My Downloads";
+            document.getElementById('fileListBackButton').onclick = () => navigateToProfile();
+            renderFileList(downloads);
+            showPage('fileListPage');
+        }
+
+        function trackDownload(file) {
+            let accounts = getStudentAccounts();
+            const userAccount = accounts.find(acc => acc.username === currentUser.username);
+            if (userAccount) {
+                if (!userAccount.downloads) userAccount.downloads = [];
+                if (!userAccount.downloads.some(d => d.id === file.id)) {
+                    userAccount.downloads.push(file);
+                    saveStudentAccounts(accounts);
+                    currentUser.downloads = userAccount.downloads;
+                    sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+                }
+            }
+        }
         
         // --- Admin Panel ---
         const getUploadedFiles = () => JSON.parse(localStorage.getItem('uploadedFiles')) || [];
         const saveUploadedFiles = (files) => localStorage.setItem('uploadedFiles', JSON.stringify(files));
         const readFileAsDataURL = (file) => new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(file); });
-        
-        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const title = document.getElementById('fileTitle').value;
-            let category = document.getElementById('fileCategory').value;
-            if (category === 'Custom') category = document.getElementById('customCategory').value.trim();
-            if (!title || !category) return alert('Please fill all required fields.');
-            let link = "", permissions = { view: true, download: true };
-
-            try {
-                if (category === 'Quiz') {
-                    link = document.getElementById('quizData').value;
-                    permissions.download = false;
-                } else if (category === 'Live Class') {
-                    link = document.getElementById('fileLink').value;
-                    if (!link) return alert('Please provide the Live Class link.');
-                    permissions.download = false;
-                } else if (document.querySelector('input[name="uploadMethod"]:checked').value === 'file') {
-                    const fileInput = document.getElementById('fileUpload');
-                    if (!fileInput.files[0]) return alert('Please select a file.');
-                    link = await readFileAsDataURL(fileInput.files[0]);
-                } else {
-                    link = document.getElementById('fileLink').value;
-                    if (!link) return alert('Please provide a link.');
-                }
-                if (category !== 'Quiz' && category !== 'Live Class') {
-                    permissions = { view: document.getElementById('allowView').checked, download: document.getElementById('allowDownload').checked };
-                }
-                const newFile = { id: Date.now(), title, category, link, permissions };
-                saveUploadedFiles([...getUploadedFiles(), newFile]);
-                alert('Uploaded successfully!');
-                e.target.reset();
-                handleCategoryChange();
-                renderUploadedFiles();
-            } catch (error) { console.error(error); alert("Upload failed. File might be too large."); }
-        });
-        
-        function handleCategoryChange() {
-            const category = document.getElementById('fileCategory').value;
-            document.getElementById('customCategory').style.display = category === 'Custom' ? 'block' : 'none';
-            document.getElementById('quizData').style.display = category === 'Quiz' ? 'block' : 'none';
-            document.getElementById('uploadMethodContainer').style.display = (category !== 'Quiz' && category !== 'Live Class') ? 'block' : 'none';
-            document.getElementById('fileLink').style.display = (category === 'Live Class' || (document.getElementById('uploadMethodLink').checked && category !== 'Quiz')) ? 'block' : 'none';
-            document.querySelector('.permissions').style.display = (category !== 'Quiz' && category !== 'Live Class') ? 'flex' : 'none';
-            document.getElementById('fileLink').placeholder = category === 'Live Class' ? 'Enter Live Class URL' : 'File URL or Video Link';
-            toggleUploadInput(document.getElementById('uploadMethodFile').checked);
-        }
-
-        function toggleUploadInput(isFile) {
-             const category = document.getElementById('fileCategory').value;
-             if (category === 'Live Class' || category === 'Quiz') return;
-             document.getElementById('fileUpload').style.display = isFile ? 'block' : 'none';
-             document.getElementById('fileLink').style.display = !isFile ? 'block' : 'none';
-        }
-        
-        function renderUploadedFiles() {
-            const listContainer = document.getElementById('uploadedFilesList');
-            listContainer.innerHTML = '';
-            const files = getUploadedFiles();
-            if (files.length === 0) { listContainer.innerHTML = '<p>No files uploaded yet.</p>'; return; }
-            files.forEach(file => {
-                const item = document.createElement('div');
-                item.className = 'file-item';
-                item.innerHTML = `<span>${file.title} (${file.category})</span>`;
-                const deleteButton = document.createElement('button');
-                deleteButton.textContent = 'Delete';
-                deleteButton.addEventListener('click', () => deleteFile(file.id));
-                item.appendChild(deleteButton);
-                listContainer.appendChild(item);
-            });
-        }
-        
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) { e.preventDefault(); const title = document.getElementById('fileTitle').value; let category = document.getElementById('fileCategory').value; if (category === 'Custom') category = document.getElementById('customCategory').value.trim(); if (!title || !category) return alert('Please fill all required fields.'); let link = "", permissions = { view: true, download: true }; try { if (category === 'Quiz') { link = document.getElementById('quizData').value; permissions.download = false; } else if (category === 'Live Class') { link = document.getElementById('fileLink').value; if (!link) return alert('Please provide the Live Class link.'); permissions.download = false; } else if (document.querySelector('input[name="uploadMethod"]:checked').value === 'file') { const fileInput = document.getElementById('fileUpload'); if (!fileInput.files[0]) return alert('Please select a file.'); link = await readFileAsDataURL(fileInput.files[0]); } else { link = document.getElementById('fileLink').value; if (!link) return alert('Please provide a link.'); } if (category !== 'Quiz' && category !== 'Live Class') { permissions = { view: document.getElementById('allowView').checked, download: document.getElementById('allowDownload').checked }; } const newFile = { id: Date.now(), title, category, link, permissions }; saveUploadedFiles([...getUploadedFiles(), newFile]); alert('Uploaded successfully!'); e.target.reset(); handleCategoryChange(); renderUploadedFiles(); } catch (error) { console.error(error); alert("Upload failed."); } });
+        function handleCategoryChange() { const category = document.getElementById('fileCategory').value; document.getElementById('customCategory').style.display = category === 'Custom' ? 'block' : 'none'; document.getElementById('quizData').style.display = category === 'Quiz' ? 'block' : 'none'; document.getElementById('uploadMethodContainer').style.display = (category !== 'Quiz' && category !== 'Live Class') ? 'block' : 'none'; document.getElementById('fileLink').style.display = (category === 'Live Class' || (document.getElementById('uploadMethodLink').checked && category !== 'Quiz')) ? 'block' : 'none'; document.querySelector('.permissions').style.display = (category !== 'Quiz' && category !== 'Live Class') ? 'flex' : 'none'; document.getElementById('fileLink').placeholder = category === 'Live Class' ? 'Enter Live Class URL' : 'File URL or Video Link'; toggleUploadInput(document.getElementById('uploadMethodFile').checked); }
+        function toggleUploadInput(isFile) { const category = document.getElementById('fileCategory').value; if (category === 'Live Class' || category === 'Quiz') return; document.getElementById('fileUpload').style.display = isFile ? 'block' : 'none'; document.getElementById('fileLink').style.display = !isFile ? 'block' : 'none'; }
+        function renderUploadedFiles() { const listContainer = document.getElementById('uploadedFilesList'); listContainer.innerHTML = ''; const files = getUploadedFiles(); if (files.length === 0) { listContainer.innerHTML = '<p>No files uploaded yet.</p>'; return; } files.forEach(file => { const item = document.createElement('div'); item.className = 'file-item'; item.innerHTML = `<span>${file.title} (${file.category})</span>`; const deleteButton = document.createElement('button'); deleteButton.textContent = 'Delete'; deleteButton.addEventListener('click', () => deleteFile(file.id)); item.appendChild(deleteButton); listContainer.appendChild(item); }); }
         function deleteFile(id) { if (confirm('Are you sure?')) { saveUploadedFiles(getUploadedFiles().filter(file => file.id !== id)); renderUploadedFiles(); }}
         
-        // --- File & Quiz List Viewing ---
+        // --- File & Quiz List Viewing (UPDATED to track downloads) ---
         function showFiles(category) { const files = getUploadedFiles().filter(file => file.category === category); document.getElementById('fileListTitle').innerText = category; document.getElementById('fileListBackButton').onclick = () => showPage('homePage'); renderFileList(files, category === 'Live Class'); showPage('fileListPage'); }
-        function renderFileList(files, isLiveClass = false) { const container = document.getElementById('fileListContainer'); container.innerHTML = files.length === 0 ? '<p>No materials here yet.</p>' : ''; files.forEach(file => { const item = document.createElement('div'); item.className = 'file-list-item'; item.innerHTML = `<div class="file-title">${file.title}</div>`; const actions = document.createElement('div'); actions.className = 'file-actions'; const viewBtn = document.createElement('button'); viewBtn.textContent = isLiveClass ? 'Join Class' : 'View'; viewBtn.className = 'view'; viewBtn.addEventListener('click', () => window.open(file.link, '_blank')); actions.appendChild(viewBtn); if(!isLiveClass){ const downloadBtn = document.createElement('button'); downloadBtn.textContent = 'Download'; downloadBtn.disabled = !file.permissions.download; downloadBtn.addEventListener('click', () => { const a = document.createElement('a'); a.href = file.link; a.download = file.title; a.click(); }); actions.appendChild(downloadBtn); } else { actions.style.gridTemplateColumns = '1fr'; } item.appendChild(actions); container.appendChild(item); }); }
+        function renderFileList(files, isLiveClass = false) { const container = document.getElementById('fileListContainer'); container.innerHTML = files.length === 0 ? '<p>No materials here yet.</p>' : ''; files.forEach(file => { const item = document.createElement('div'); item.className = 'file-list-item'; item.innerHTML = `<div class="file-title">${file.title}</div>`; const actions = document.createElement('div'); actions.className = 'file-actions'; const viewBtn = document.createElement('button'); viewBtn.textContent = isLiveClass ? 'Join Class' : 'View'; viewBtn.className = 'view'; viewBtn.addEventListener('click', () => { trackDownload(file); window.open(file.link, '_blank'); }); actions.appendChild(viewBtn); if(!isLiveClass){ const downloadBtn = document.createElement('button'); downloadBtn.textContent = 'Download'; downloadBtn.disabled = !file.permissions.download; downloadBtn.addEventListener('click', () => { trackDownload(file); const a = document.createElement('a'); a.href = file.link; a.download = file.title; a.click(); }); actions.appendChild(downloadBtn); } else { actions.style.gridTemplateColumns = '1fr'; } item.appendChild(actions); container.appendChild(item); }); }
         
-        // Simplified placeholders for other features
         const renderQuizList = () => { document.getElementById('quizListContainer').innerHTML = "<p>Quiz feature is under construction.</p>"; };
-        const showMyDownloads = () => alert('Feature coming soon');
-        const shareApplication = () => alert('Feature coming soon');
+
+        // --- NEW: Chatbot Logic ---
+        function toggleChatbot() { document.getElementById('chatbot-window').classList.toggle('active'); }
+        function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+            addChatMessage(message, 'user');
+            input.value = '';
+            setTimeout(() => getBotResponse(message), 500);
+        }
+        document.getElementById('chatInput').addEventListener('keypress', e => { if (e.key === 'Enter') sendChatMessage(); });
+        function addChatMessage(message, sender) {
+            const chatBody = document.getElementById('chatBody');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `chat-message ${sender}`;
+            msgDiv.textContent = message;
+            chatBody.appendChild(msgDiv);
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+        function getBotResponse(input) {
+            const lowerInput = input.toLowerCase();
+            let reply = "I can help with NCERT, Quiz, Live Class, or Current Affairs.";
+            if (lowerInput.includes('ncert')) { reply = "You can find all NCERT Books in the Resources section on the Home Page."; }
+            else if (lowerInput.includes('quiz') || lowerInput.includes('test')) { reply = "The 'My Tests' section has all available quizzes."; }
+            else if (lowerInput.includes('live') || lowerInput.includes('class')) { reply = "Check the 'Live Class' card on the Home Page for active classes."; }
+            else if (lowerInput.includes('current affairs')) { reply = "The latest Current Affairs PDFs are in the Resources section."; }
+            addChatMessage(reply, 'bot');
+        }
     </script>
 </body>
 </html>
