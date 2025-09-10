@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Material App</title>
+    <style>
+        :root {
+            --primary-bg: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --primary-accent: #6c63ff;
+            --shadow: 0 4px 12px rgba(0,0,0,0.08);
+            --border-radius: 15px;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .app-container {
+            width: 100%;
+            max-width: 450px;
+            height: 100vh;
+            max-height: 900px;
+            background-color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            transition: max-width 0.4s ease-in-out;
+        }
+        .page {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            animation: fadeIn 0.5s;
+        }
+        .page.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- NAVIGATION STYLES --- */
+        .desktop-nav { display: none; }
+        .mobile-nav {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-around;
+            background-color: white;
+            border-top: 1px solid #eee;
+            z-index: 100;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            color: #999;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+            padding: 5px 0;
+            width: 25%;
+        }
+        .nav-item.active { color: var(--primary-accent); }
+        .nav-item .icon { font-size: 1.5rem; }
+
+        /* Desktop Responsiveness */
+        @media (min-width: 768px) {
+            .app-container {
+                max-width: 1200px;
+                height: 90vh;
+                max-height: 800px;
+                border-radius: 25px;
+                flex-direction: row;
+            }
+            .page { flex-grow: 1; height: 100%; flex-direction: row; }
+            .login-page-container { width: 100%; }
+            .content-area, .page-content { padding: 2rem 3rem !important; }
+            .cards-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)) !important; }
+            .desktop-nav {
+                display: flex;
+                width: 220px;
+                flex-shrink: 0;
+                height: 100%;
+                flex-direction: column;
+                justify-content: flex-start;
+                align-items: stretch;
+                border-right: 1px solid #eee;
+                padding-top: 2rem;
+            }
+            .mobile-nav { display: none; }
+            .nav-item { flex-direction: row; justify-content: flex-start; padding: 15px 25px; font-size: 1rem; gap: 15px; width: 100% !important; }
+            .nav-item .icon { font-size: 1.2rem; }
+            .main-content { flex-grow: 1; overflow-y: auto; height: 100%; }
+        }
+
+        /* Login Page */
+        .login-page-container { display: flex; justify-content: center; align-items: center; padding: 2rem; box-sizing: border-box; flex-grow: 1; }
+        .login-form { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 1rem; }
+        .login-form input { padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
+        .login-form button { padding: 12px; border: none; border-radius: 8px; background-color: var(--primary-accent); color: white; font-size: 1rem; cursor: pointer; }
+        .login-links { margin-top: 1rem; text-align: center; }
+        .login-links a { color: var(--primary-accent); text-decoration: none; cursor: pointer; }
+
+        /* Main App Content */
+        .main-content { overflow-y: auto; flex-grow: 1; padding-bottom: 70px; }
+        .app-header { padding: 1.5rem 1.5rem 1rem 1.5rem; font-size: 1.75rem; font-weight: 600; color: #333; }
+        .content-area { padding: 0 1.5rem; }
+        .section-title { margin-top: 1.5rem; margin-bottom: 1rem; font-size: 1.2rem; font-weight: 500; color: #555; }
+        .cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .card { background-color: var(--card-bg); border-radius: var(--border-radius); padding: 1rem; display: flex; align-items: center; gap: 0.8rem; box-shadow: var(--shadow); cursor: pointer; border: 1px solid #eee; }
+        .card .icon { width: 35px; height: 35px; border-radius: 10px; display: flex; justify-content: center; align-items: center; color: white; font-size: 1.2rem; }
+        .card .text { font-size: 0.9rem; font-weight: 500; }
+        .card.purple .icon { background-color: #c084fc; } .card.yellow .icon { background-color: #facc15; } .card.green .icon { background-color: #4ade80; }
+        .card.pink .icon { background-color: #f472b6; } .card.peach .icon { background-color: #fb923c; } .card.blue .icon { background-color: #60a5fa; }
+        .card.lavender .icon { background-color: #a78bfa; } .card.orange .icon { background-color: #fb923c; } .card.teal .icon { background-color: #5eead4; }
+        .card.gold .icon { background-color: #fbbf24; }
+        
+        /* Generic Page Styles */
+        .page-content { flex: 1; padding: 1.5rem; box-sizing: border-box; overflow-y: auto; }
+        .page-content h2 { margin-top: 0; margin-bottom: 2rem; text-align: center; color: #444; }
+        .form-container, .profile-form { display: flex; flex-direction: column; gap: 1rem; max-width: 500px; margin: 0 auto; }
+        .profile-form button, .form-container button { padding: 12px; border: none; border-radius: 8px; background-color: var(--primary-accent); color: white; cursor: pointer; font-size: 1rem; }
+        #uploadedFilesList .file-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background-color: white; border-radius: 8px; margin-bottom: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        #uploadedFilesList .file-item button { background-color: #ef4444; padding: 5px 10px; font-size: 0.8rem; border: none; color: white; border-radius: 5px; cursor: pointer; }
+        .profile-options { display: flex; flex-direction: column; gap: 0.8rem; max-width: 500px; margin: 0 auto;}
+        .profile-options button { background-color: white; color: var(--text-color); text-align: left; padding: 15px; box-shadow: var(--shadow); border: 1px solid #eee; }
+        .profile-options button.danger, #adminPanel button.danger { background-color: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+        .file-list-item { background-color: white; padding: 1rem; border-radius: 12px; margin-bottom: 1rem; box-shadow: var(--shadow); }
+        .file-title { font-weight: 600; font-size: 1.1rem; margin-bottom: 1rem; }
+        .file-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .file-actions button { padding: 10px; font-size: 1rem; border-radius: 8px; border: none; cursor: pointer; font-weight: 500; }
+        .file-actions button.view { background-color: #4285F4; color: white; }
+        .file-actions button:disabled { background-color: #E0E0E0; color: #757575; cursor: not-allowed; }
+        .back-button { margin-bottom: 1rem; padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; background-color: #f0f0f0; cursor: pointer; width: fit-content; }
+
+        .modal { position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); display: none; justify-content: center; align-items: center; }
+        .modal-content { background-color: #fefefe; padding: 20px; border-radius: 15px; width: 80%; max-width: 500px; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Login Pages -->
+        <div id="loginPage" class="page"><div class="login-page-container"><div class="login-form"><h2>Student Login</h2><input type="text" id="studentUsername" placeholder="Username"><input type="password" id="studentPassword" placeholder="Password"><button onclick="handleStudentLogin()">Login</button><div class="login-links"><a onclick="showSignup()">Sign Up</a><hr><a onclick="showAdminLogin()">Admin Login</a></div></div></div></div>
+        <div id="signupPage" class="page"><div class="login-page-container"><div class="login-form"><h2>Student Sign Up</h2><input type="text" id="signupUsername" placeholder="Username"><input type="password" id="signupPassword" placeholder="Password"><button onclick="handleStudentSignup()">Sign Up</button><div class="login-links"><a onclick="showStudentLogin()">Login</a></div></div></div></div>
+        <div id="adminLoginPage" class="page"><div class="login-page-container"><div class="login-form"><h2>Admin Login</h2><input type="email" id="adminEmail" placeholder="Email"><input type="password" id="adminPassword" placeholder="Password"><button onclick="handleAdminLogin()">Login</button><div class="login-links"><a onclick="showStudentLogin()">Student Login</a></div></div></div></div>
+
+        <!-- Home Page -->
+        <div id="homePage" class="page">
+            <div class="desktop-nav"><div class="nav-item active" onclick="showPage('homePage')"><span class="icon">🏠</span>Home</div><div class="nav-item" onclick="showPage('myTestsPage')"><span class="icon">📝</span>My Tests</div><div class="nav-item" onclick="showFiles('My Courses')"><span class="icon">▶️</span>My Courses</div><div class="nav-item" onclick="navigateToProfile()"><span class="icon">👤</span>Profile</div></div>
+            <main class="main-content"><div class="app-header">Study Material</div><div class="content-area">
+                <div class="section-title">Academics</div>
+                <div class="cards-grid">
+                    <div class="card pink" onclick="showFiles('Live Class')"><div class="icon">📹</div><span class="text">Live Class</span></div>
+                    <div class="card purple" onclick="showFiles('Daily Newspaper Highlights')"><div class="icon">📰</div><span class="text">Newspaper Highlights</span></div>
+                    <div class="card yellow" onclick="showFiles('UPSC Answer Writing')"><div class="icon">✍️</div><span class="text">UPSC Answers</span></div>
+                    <div class="card green" onclick="showFiles('BPSC Answer Writing')"><div class="icon">✍️</div><span class="text">BPSC Answers</span></div>
+                </div>
+                <div class="section-title">Resources</div>
+                <div class="cards-grid">
+                    <div class="card peach" onclick="showFiles('NCERT BOOK')"><div class="icon">📚</div><span class="text">NCERT BOOK</span></div>
+                    <div class="card blue" onclick="showFiles('Previous Year Questions')"><div class="icon">📜</div><span class="text">Previous Questions</span></div>
+                    <div class="card lavender" onclick="showFiles('Current Affairs PDFs')"><div class="icon">📄</div><span class="text">Current Affairs</span></div>
+                    <div class="card orange" onclick="showFiles('Mind Maps')"><div class="icon">🧠</div><span class="text">Mind Maps</span></div>
+                    <div class="card teal" onclick="showFiles('Infographics')"><div class="icon">📊</div><span class="text">Infographics</span></div>
+                    <div class="card gold" onclick="showFiles('Others')"><div class="icon">📁</div><span class="text">Others</span></div>
+                </div>
+            </div></main>
+            <div class="mobile-nav"><div class="nav-item active" onclick="showPage('homePage')"><span class="icon">🏠</span>Home</div><div class="nav-item" onclick="showPage('myTestsPage')"><span class="icon">📝</span>My Tests</div><div class="nav-item" onclick="showFiles('My Courses')"><span class="icon">▶️</span>My Courses</div><div class="nav-item" onclick="navigateToProfile()"><span class="icon">👤</span>Profile</div></div>
+        </div>
+
+        <!-- My Tests Page -->
+        <div id="myTestsPage" class="page">
+            <div class="desktop-nav"><div class="nav-item" onclick="showPage('homePage')"><span class="icon">🏠</span>Home</div><div class="nav-item active" onclick="showPage('myTestsPage')"><span class="icon">📝</span>My Tests</div><div class="nav-item" onclick="showFiles('My Courses')"><span class="icon">▶️</span>My Courses</div><div class="nav-item" onclick="navigateToProfile()"><span class="icon">👤</span>Profile</div></div>
+            <main class="main-content page-content"><h2>My Tests</h2><div id="quizListContainer"></div></main>
+            <div class="mobile-nav"><div class="nav-item" onclick="showPage('homePage')"><span class="icon">🏠</span>Home</div><div class="nav-item active" onclick="showPage('myTestsPage')"><span class="icon">📝</span>My Tests</div><div class="nav-item" onclick="showFiles('My Courses')"><span class="icon">▶️</span>My Courses</div><div class="nav-item" onclick="navigateToProfile()"><span class="icon">👤</span>Profile</div></div>
+        </div>
+        
+        <!-- Profile Page -->
+        <div id="profilePage" class="page">
+            <div class="desktop-nav"><div class="nav-item" onclick="showPage('homePage')"><span class="icon">🏠</span>Home</div><div class="nav-item" onclick="showPage('myTestsPage')"><span class="icon">📝</span>My Tests</div><div class="nav-item" onclick="showFiles('My Courses')"><span class="icon">▶️</span>My Courses</div><div class="nav-item active" onclick="navigateToProfile()"><span class="icon">👤</span>Profile</div></div>
+            <main class="main-content page-content">
+                <div id="profileView"><h2>Profile</h2><div class="profile-options"><button onclick="showMyDownloads()">My Downloads</button><button onclick="shareApplication()">Share App</button><button onclick="showProfileEdit()">Edit Profile</button><button onclick="showTerms()">Terms</button><button onclick="handleDeleteAccount()" class="danger">Delete Account</button><button onclick="handleLogout()" class="danger">Logout</button></div></div>
+                <div id="profileEditView" style="display:none;"><h2>Edit Profile</h2><form class="profile-form" onsubmit="handleProfileUpdate(event)"><input type="text" id="editUsername" placeholder="New Username"><input type="password" id="editPassword" placeholder="New Password"><button type="submit">Update</button></form><button onclick="showProfileView()" class="back-button" style="margin-top: 1rem;">Cancel</button></div>
+            </main>
+            <div class="mobile-nav"><div class="nav-item" onclick="showPage('homePage')"><span class="icon">🏠</span>Home</div><div class="nav-item" onclick="showPage('myTestsPage')"><span class="icon">📝</span>My Tests</div><div class="nav-item" onclick="showFiles('My Courses')"><span class="icon">▶️</span>My Courses</div><div class="nav-item active" onclick="navigateToProfile()"><span class="icon">👤</span>Profile</div></div>
+        </div>
+
+        <!-- Utility Pages -->
+        <div id="fileListPage" class="page"><div class="page-content"><h2 id="fileListTitle">Files</h2><div id="fileListBackButton" class="back-button">← Back</div><div id="fileListContainer"></div></div></div>
+        <div id="adminPanel" class="page"><div class="page-content"><h2>Admin Panel</h2>
+            <!-- ***** FIX: Changed div to form ***** -->
+            <form class="form-container" id="uploadForm">
+                <input type="text" id="fileTitle" placeholder="File Title" required>
+                <select id="fileCategory" onchange="handleCategoryChange()"><option value="">Select Category</option><option value="Live Class">📹 Live Class</option><option value="Daily Newspaper Highlights">📰 Newspaper Highlights</option><option value="UPSC Answer Writing">✍️ UPSC Answers</option><option value="My Courses">▶️ My Courses</option><option value="Quiz">📝 Quiz</option><option value="Others">📁 Others</option><option value="Custom">Custom Category</option></select>
+                <input type="text" id="customCategory" placeholder="Enter Custom Category" style="display:none;">
+                <textarea id="quizData" placeholder='For Quiz, paste JSON here' style="display:none; height: 100px;"></textarea>
+                <div id="uploadMethodContainer">
+                    <div style="margin-bottom: 0.5rem;"><label>Upload Method:</label>
+                        <div>
+                            <input type="radio" id="uploadMethodFile" name="uploadMethod" value="file" checked onchange="toggleUploadInput(true)"><label for="uploadMethodFile">File</label> 
+                            <input type="radio" id="uploadMethodLink" name="uploadMethod" value="link" onchange="toggleUploadInput(false)"><label for="uploadMethodLink">Link</label>
+                        </div>
+                    </div>
+                    <input type="file" id="fileUpload">
+                    <small>Note: Browser storage may limit size.</small>
+                </div>
+                <input type="text" id="fileLink" placeholder="File URL or Video/Class Link" style="display: none;">
+                <div class="permissions" style="display: flex;">
+                    <label><input type="checkbox" id="allowView" checked> View</label>
+                    <label><input type="checkbox" id="allowDownload"> Download</label>
+                </div>
+                <button type="submit">Upload Material</button>
+            </form>
+            <hr style="margin: 2rem 0;">
+            <div class="form-container">
+                <h3>Uploaded Files</h3>
+                <div id="uploadedFilesList"></div>
+                <button onclick="handleLogout()" class="danger" style="width:100%; margin-top:1rem;">Logout</button>
+            </div>
+        </div></div>
+        <div id="termsModal" class="modal"><div class="modal-content"><span style="float:right; cursor:pointer;" onclick="closeTerms()">&times;</span><h2>Terms</h2><p>For educational use only.</p></div></div>
+    </div>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-auth.js"></script>
+    <script>
+        // --- Firebase Config ---
+        const firebaseConfig = {
+  apiKey: "AIzaSyAYqamKln5RzxJZyoBBCA9Ld4QyFdwVuXo",
+  authDomain: "hindi-association-app-c996b.firebaseapp.com",
+  databaseURL: "https://hindi-association-app-c996b-default-rtdb.firebaseio.com",
+  projectId: "hindi-association-app-c996b",
+  storageBucket: "hindi-association-app-c996b.firebasestorage.app",
+  messagingSenderId: "887134213948",
+  appId: "1:887134213948:web:c2cccfb3a8e510883d3039",
+  measurementId: "G-MP2GHYQN69"
+};
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        // --- Global State ---
+        let currentUser = null;
+
+        // --- App Initialization (CRITICAL: Login Check) ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const loggedInStudent = sessionStorage.getItem('currentUser');
+            const loggedInAdmin = sessionStorage.getItem('adminLoggedIn');
+            
+            if (loggedInStudent) {
+                currentUser = JSON.parse(loggedInStudent);
+                showPage('homePage');
+            } else if (loggedInAdmin) {
+                showPage('adminPanel');
+            } else {
+                showPage('loginPage'); // ALWAYS default to login
+            }
+        });
+
+        // --- Navigation ---
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            updateNav(pageId);
+            if (pageId === 'adminPanel') renderUploadedFiles();
+        }
+        function updateNav(pageId) {
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.querySelectorAll(`.nav-item[onclick*="'${pageId}'"]`).forEach(nav => nav.classList.add('active'));
+            if(pageId === 'fileListPage' && document.getElementById('fileListTitle').innerText === 'My Courses') {
+                 document.querySelectorAll(`.nav-item[onclick*="showFiles('My Courses')"]`).forEach(nav => nav.classList.add('active'));
+            }
+        }
+        const navigateToProfile = () => { showProfileView(); showPage('profilePage'); };
+        const showStudentLogin = () => showPage('loginPage');
+        const showSignup = () => showPage('signupPage');
+        const showAdminLogin = () => showPage('adminLoginPage');
+
+        // --- Student Auth & Data ---
+        const getStudentAccounts = () => JSON.parse(localStorage.getItem('studentAccounts')) || [];
+        const saveStudentAccounts = (accounts) => localStorage.setItem('studentAccounts', JSON.stringify(accounts));
+        function handleStudentSignup() {
+            const username = document.getElementById('signupUsername').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            if (!username || !password) return alert('Please fill all fields.');
+            if (getStudentAccounts().find(acc => acc.username === username)) return alert('Username already exists.');
+            saveStudentAccounts([...getStudentAccounts(), { username, password, downloads: [] }]);
+            alert('Signup successful!');
+            showStudentLogin();
+        }
+        function handleStudentLogin() {
+            const username = document.getElementById('studentUsername').value.trim();
+            const password = document.getElementById('studentPassword').value;
+            const user = getStudentAccounts().find(acc => acc.username === username && acc.password === password);
+            if (user) {
+                currentUser = user;
+                sessionStorage.setItem('currentUser', JSON.stringify(user));
+                showPage('homePage');
+            } else { alert('Invalid credentials.'); }
+        }
+        
+        // --- Admin Auth ---
+        function handleAdminLogin() {
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            if (!email || !password) return alert('Please enter email and password.');
+            auth.signInWithEmailAndPassword(email, password)
+                .then(() => {
+                    sessionStorage.setItem('adminLoggedIn', 'true');
+                    showPage('adminPanel');
+                })
+                .catch(error => alert('Admin Login Failed: ' + error.message));
+        }
+        
+        // --- Logout & Account Management ---
+        function handleLogout() {
+            sessionStorage.clear();
+            currentUser = null;
+            if (auth.currentUser) auth.signOut();
+            showPage('loginPage');
+        }
+        const handleDeleteAccount = () => { if (confirm('Are you sure?')) { saveStudentAccounts(getStudentAccounts().filter(acc => acc.username !== currentUser.username)); handleLogout(); } };
+        
+        // --- Profile Section ---
+        const showProfileEdit = () => { document.getElementById('profileView').style.display = 'none'; document.getElementById('profileEditView').style.display = 'block'; document.getElementById('editUsername').value = currentUser.username; document.getElementById('editPassword').value = ''; };
+        const showProfileView = () => { document.getElementById('profileView').style.display = 'block'; document.getElementById('profileEditView').style.display = 'none'; };
+        function handleProfileUpdate(event) {
+            event.preventDefault();
+            const newUsername = document.getElementById('editUsername').value.trim();
+            const newPassword = document.getElementById('editPassword').value;
+            if (!newUsername) return alert('Username cannot be empty.');
+            let accounts = getStudentAccounts();
+            const userIndex = accounts.findIndex(acc => acc.username === currentUser.username);
+            if (accounts.some((acc, i) => acc.username === newUsername && i !== userIndex)) { return alert('This username is already taken.'); }
+            accounts[userIndex].username = newUsername;
+            if (newPassword) accounts[userIndex].password = newPassword;
+            saveStudentAccounts(accounts);
+            currentUser = accounts[userIndex];
+            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+            alert('Profile updated successfully!');
+            showProfileView();
+        }
+        const showTerms = () => document.getElementById('termsModal').style.display = 'flex';
+        const closeTerms = () => document.getElementById('termsModal').style.display = 'none';
+        
+        // --- Admin Panel ---
+        const getUploadedFiles = () => JSON.parse(localStorage.getItem('uploadedFiles')) || [];
+        const saveUploadedFiles = (files) => localStorage.setItem('uploadedFiles', JSON.stringify(files));
+        const readFileAsDataURL = (file) => new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(file); });
+        
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const title = document.getElementById('fileTitle').value;
+            let category = document.getElementById('fileCategory').value;
+            if (category === 'Custom') category = document.getElementById('customCategory').value.trim();
+            if (!title || !category) return alert('Please fill all required fields.');
+            let link = "", permissions = { view: true, download: true };
+
+            try {
+                if (category === 'Quiz') {
+                    link = document.getElementById('quizData').value;
+                    permissions.download = false;
+                } else if (category === 'Live Class') {
+                    link = document.getElementById('fileLink').value;
+                    if (!link) return alert('Please provide the Live Class link.');
+                    permissions.download = false;
+                } else if (document.querySelector('input[name="uploadMethod"]:checked').value === 'file') {
+                    const fileInput = document.getElementById('fileUpload');
+                    if (!fileInput.files[0]) return alert('Please select a file.');
+                    link = await readFileAsDataURL(fileInput.files[0]);
+                } else {
+                    link = document.getElementById('fileLink').value;
+                    if (!link) return alert('Please provide a link.');
+                }
+                if (category !== 'Quiz' && category !== 'Live Class') {
+                    permissions = { view: document.getElementById('allowView').checked, download: document.getElementById('allowDownload').checked };
+                }
+                const newFile = { id: Date.now(), title, category, link, permissions };
+                saveUploadedFiles([...getUploadedFiles(), newFile]);
+                alert('Uploaded successfully!');
+                e.target.reset();
+                handleCategoryChange();
+                renderUploadedFiles();
+            } catch (error) { console.error(error); alert("Upload failed. File might be too large."); }
+        });
+        
+        function handleCategoryChange() {
+            const category = document.getElementById('fileCategory').value;
+            document.getElementById('customCategory').style.display = category === 'Custom' ? 'block' : 'none';
+            document.getElementById('quizData').style.display = category === 'Quiz' ? 'block' : 'none';
+            document.getElementById('uploadMethodContainer').style.display = (category !== 'Quiz' && category !== 'Live Class') ? 'block' : 'none';
+            document.getElementById('fileLink').style.display = (category === 'Live Class' || (document.getElementById('uploadMethodLink').checked && category !== 'Quiz')) ? 'block' : 'none';
+            document.querySelector('.permissions').style.display = (category !== 'Quiz' && category !== 'Live Class') ? 'flex' : 'none';
+            document.getElementById('fileLink').placeholder = category === 'Live Class' ? 'Enter Live Class URL' : 'File URL or Video Link';
+            toggleUploadInput(document.getElementById('uploadMethodFile').checked);
+        }
+
+        function toggleUploadInput(isFile) {
+             const category = document.getElementById('fileCategory').value;
+             if (category === 'Live Class' || category === 'Quiz') return;
+             document.getElementById('fileUpload').style.display = isFile ? 'block' : 'none';
+             document.getElementById('fileLink').style.display = !isFile ? 'block' : 'none';
+        }
+        
+        function renderUploadedFiles() {
+            const listContainer = document.getElementById('uploadedFilesList');
+            listContainer.innerHTML = '';
+            const files = getUploadedFiles();
+            if (files.length === 0) { listContainer.innerHTML = '<p>No files uploaded yet.</p>'; return; }
+            files.forEach(file => {
+                const item = document.createElement('div');
+                item.className = 'file-item';
+                item.innerHTML = `<span>${file.title} (${file.category})</span>`;
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.addEventListener('click', () => deleteFile(file.id));
+                item.appendChild(deleteButton);
+                listContainer.appendChild(item);
+            });
+        }
+        
+        function deleteFile(id) { if (confirm('Are you sure?')) { saveUploadedFiles(getUploadedFiles().filter(file => file.id !== id)); renderUploadedFiles(); }}
+        
+        // --- File & Quiz List Viewing ---
+        function showFiles(category) { const files = getUploadedFiles().filter(file => file.category === category); document.getElementById('fileListTitle').innerText = category; document.getElementById('fileListBackButton').onclick = () => showPage('homePage'); renderFileList(files, category === 'Live Class'); showPage('fileListPage'); }
+        function renderFileList(files, isLiveClass = false) { const container = document.getElementById('fileListContainer'); container.innerHTML = files.length === 0 ? '<p>No materials here yet.</p>' : ''; files.forEach(file => { const item = document.createElement('div'); item.className = 'file-list-item'; item.innerHTML = `<div class="file-title">${file.title}</div>`; const actions = document.createElement('div'); actions.className = 'file-actions'; const viewBtn = document.createElement('button'); viewBtn.textContent = isLiveClass ? 'Join Class' : 'View'; viewBtn.className = 'view'; viewBtn.addEventListener('click', () => window.open(file.link, '_blank')); actions.appendChild(viewBtn); if(!isLiveClass){ const downloadBtn = document.createElement('button'); downloadBtn.textContent = 'Download'; downloadBtn.disabled = !file.permissions.download; downloadBtn.addEventListener('click', () => { const a = document.createElement('a'); a.href = file.link; a.download = file.title; a.click(); }); actions.appendChild(downloadBtn); } else { actions.style.gridTemplateColumns = '1fr'; } item.appendChild(actions); container.appendChild(item); }); }
+        
+        // Simplified placeholders for other features
+        const renderQuizList = () => { document.getElementById('quizListContainer').innerHTML = "<p>Quiz feature is under construction.</p>"; };
+        const showMyDownloads = () => alert('Feature coming soon');
+        const shareApplication = () => alert('Feature coming soon');
+    </script>
+</body>
+</html>
